@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>機台資料輸入</title>
+    <script>
+        // 密码验证功能
+        function showCheckboxes() {
+            var password = prompt('請輸入密碼：');
+            if (password === '123456') { // 密码设置为123456
+                // 显示删除功能
+                document.querySelectorAll('.deleteCheckbox').forEach(checkbox => checkbox.style.display = 'table-cell');
+                document.getElementById('deleteButton').style.display = 'block';
+            } else {
+                alert('密碼錯誤！');
+            }
+        }
+
+        // 将表单数据保存到 localStorage
+        function saveData() {
+            var machine = document.getElementById('machine').value;
+            var fileNo = document.getElementById('fileNo').value;
+            var machineType = document.getElementById('machineType').value;
+            var productName = document.getElementById('productName').value;
+            var partNumber = document.getElementById('Partnumber').value;
+            var staff = document.getElementById('staff').value;
+            var returnDate = document.getElementById('returnDate').value;
+
+            // 读取之前保存的数据
+            var allData = JSON.parse(localStorage.getItem('allData')) || [];
+
+            // 检查是否存在相同的檔號
+            var isDuplicate = allData.some(data => data.fileNo === fileNo);
+
+            // 提示用户是否保存数据
+            if (isDuplicate) {
+                if (!confirm('已有相同檔號，是否要再儲存一次？')) {
+                    return; // 用户选择取消保存
+                }
+            } else {
+                if (!confirm('是否保存資料？')) {
+                    return; // 用户选择取消保存
+                }
+            }
+
+            // 将当前输入的数据保存到对象中
+            var formData = {
+                machine: machine,
+                fileNo: fileNo,
+                machineType: machineType,
+                productName: productName,
+                partNumber: partNumber,
+                staff: staff,
+                returnDate: returnDate
+            };
+
+            // 保存到数据数组中
+            allData.push(formData);
+
+            // 更新 localStorage
+            localStorage.setItem('allData', JSON.stringify(allData));
+
+            // 更新表格内容
+            displayData();
+        }
+
+        // 从 localStorage 中读取数据并显示在表格中
+        function displayData() {
+            // 从 localStorage 中获取数据
+            var allData = JSON.parse(localStorage.getItem('allData')) || [];
+
+            // 清空表格的现有行（除了表头）
+            var table = document.getElementById('dataTable');
+            var rowCount = table.rows.length;
+            for (var i = rowCount - 1; i > 0; i--) {
+                table.deleteRow(i);
+            }
+
+            // 将每一条数据添加到表格
+            allData.forEach(function(data, index) {
+                var newRow = table.insertRow();
+
+                var machineCell = newRow.insertCell(0);
+                var fileNoCell = newRow.insertCell(1);
+                var machineTypeCell = newRow.insertCell(2);
+                var productNameCell = newRow.insertCell(3);
+                var partNumberCell = newRow.insertCell(4);
+                var staffCell = newRow.insertCell(5);
+                var returnDateCell = newRow.insertCell(6);
+                var checkboxCell = newRow.insertCell(7); // 添加勾选框的单元格
+
+                machineCell.textContent = data.machine;
+                fileNoCell.textContent = data.fileNo;
+                machineTypeCell.textContent = data.machineType;
+                productNameCell.textContent = data.productName;
+                partNumberCell.textContent = data.partNumber;
+                staffCell.textContent = data.staff;
+                returnDateCell.textContent = data.returnDate;
+
+                // 添加勾选框，默认隐藏
+                checkboxCell.innerHTML = '<input type="checkbox" class="deleteCheckbox" style="display:none;">';
+            });
+        }
+
+        // 删除勾选的行
+        function deleteSelectedRows() {
+            var allData = JSON.parse(localStorage.getItem('allData')) || [];
+            var checkboxes = document.querySelectorAll('.deleteCheckbox');
+            
+            var newData = allData.filter(function(data, index) {
+                return !checkboxes[index].checked;
+            });
+
+            // 更新 localStorage 并刷新表格
+            localStorage.setItem('allData', JSON.stringify(newData));
+            displayData();
+        }
+
+        // 页面加载时调用 displayData() 来显示之前保存的数据
+        window.onload = function() {
+            displayData();
+            // 隐藏删除功能
+            document.querySelectorAll('.deleteCheckbox').forEach(checkbox => checkbox.style.display = 'none');
+            document.getElementById('deleteButton').style.display = 'none';
+        };
+    </script>
+</head>
+<body>
+    <h1>機台資料輸入表單</h1>
+    
+    <!-- 表单部分 -->
+    <p>加工機台: <input type="text" id="machine" placeholder="輸入加工機台"></p>
+    <p>回傳檔號: <input type="text" id="fileNo" placeholder="輸入回傳檔號"></p>
+    <p>機種: <input type="text" id="machineType" placeholder="輸入機種"></p>
+    <p>品名: <input type="text" id="productName" placeholder="輸入品名"></p>
+    <p>件號: <input type="text" id="Partnumber" placeholder="輸入件號"></p>
+    <p>人員: <input type="text" id="staff" placeholder="輸入人員"></p>
+    <p>回傳日: <input type="date" id="returnDate"></p>
+
+    <!-- 提交按钮 -->
+    <button onclick="saveData()">提交</button>
+
+    <!-- 密码验证按钮 -->
+    <button onclick="showCheckboxes()">管理模式</button>
+
+    <!-- 表格部分 -->
+    <h2>輸入結果</h2>
+    <table border="1" id="dataTable">
+        <tr>
+            <th>加工機台</th>
+            <th>回傳檔號</th>
+            <th>機種</th>
+            <th>品名</th>
+            <th>件號</th>
+            <th>人員</th>
+            <th>回傳日</th>
+            <th>已回傳</th> <!-- 勾選框標題 -->
+        </tr>
+    </table>
+
+    <!-- 删除按钮，默认隐藏 -->
+    <button id="deleteButton" style="display:none;" onclick="deleteSelectedRows()">清除已回傳資料</button>
+</body>
+</html>
